@@ -1,0 +1,250 @@
+CREATE PROCEDURE CREATE_ACCOUNT(
+	userId INT, 
+	userName CHAR(25),
+	userSurname CHAR(25),
+	userEmail CHAR(25),
+	userPhoneNumber INT, 
+	userPassword Char(25),
+    userBirthDay date,
+	userWallet TEXT, 
+	userDescription TEXT, 
+	userAvatar TEXT 
+	) NOT DETERMINISTIC
+
+	BEGIN
+		Insert into Users(`userId`, `userName`, `userSurname`, `userEmail`, 
+		`userPhoneNumber`,  `userPassword`, `userBirthDay`, `userRegistrationDay`,
+		`userWallet`, `userDescription`, `userToken`, `userAvatar`)
+		values(userId, userName,
+			userSurname, userEmail, userPhoneNumber, userPassword,
+			userBirthDay, CURRENT_DATE(), userWallet, userDescription, 'none', userAvatar);
+
+	END 
+    
+DELIMITER //
+
+CREATE PROCEDURE GET_HOUSE_TYPES() DETERMINISTIC
+	BEGIN
+		SELECT * FROM `HouseOrderTypes`; 
+	END 
+
+// 
+DELIMITER; 
+	
+CREATE PROCEDURE GET_AVAILABLE_LEASES() DETERMINISTIC
+	BEGIN
+		SELECT * FROM `Houses` where Houses.isAvailable = 1; 
+	END 
+	
+CREATE PROCEDURE GET_AVAILABLE_COUNTRIES() DETERMINISTIC
+	BEGIN 
+		SELECT * FROM `Countries`; 
+	END
+  
+ 
+INSERT INTO `HouseOrderTypes`(`houseOrderType`, `houseOrderTypeDescription`) VALUES(1, 'Flate'), (2, 'House'), (3, 'Lodging at home/apartment'), (4, 'Unique lodging'), (5, 'B&B'), (6, 'Hotel');	 
+
+ 
+DELIMITER //	
+ 
+	 
+CREATE PROCEDURE ADD_HOUSE(
+	houseId INT,
+	houseName TEXT,
+	houseOrderType INT,
+	houseGuestCount INT, 
+	houseDescription TEXT,
+	houseAddress TEXT, 
+	cityCode INT, 
+	dayPrice INT, 
+	userId INT, 
+	houseLat DOUBLE, 
+	houseLng DOUBLE
+	)   NOT DETERMINISTIC
+	BEGIN
+		Insert into Houses(`houseId`, `houseName`, `houseOrderType`, `houseAddress`,  `houseGuestCount`, `dayPrice`, `cityCode`,  `houseDescription`, `houseMainImg`, `userId`, `isAvailable`)
+			values(houseId, houseName, houseOrderType, houseAddress, houseGuestCount, dayPrice, cityCode, houseDescription, 'not', userId, 0);
+		
+		Insert into HousesLocation(`houseId`, `houseLat`, `houseLng`)
+			values (houseId, houseLat, houseLng); 	 
+		
+	END 
+
+// 
+DELIMITER; 
+	
+ 
+CREATE PROCEDURE GET_AVAILABLE_LEASES_LOCATIONS() DETERMINISTIC
+	BEGIN
+		SELECT Houses.houseId, Houses.houseName, Houses.dayPrice, HousesLocation.houseLat, HousesLocation.houseLng 
+		FROM `Houses`, `HousesLocation`
+		WHERE Houses.houseId = HousesLocation.houseId;
+	END 
+	
+
+CREATE PROCEDURE GET_USER_LODGINGS(userId INT) DETERMINISTIC
+	BEGIN 
+		SELECT * FROM `Houses` WHERE Houses.userId = userId; 
+	END
+	
+	
+CREATE PROCEDURE GET_HOUSE_PHOTOS(houseId INT) DETERMINISTIC
+	BEGIN 
+		SELECT * FROM `HouseImgs` WHERE HouseImgs.houseId = houseId; 
+	END
+	
+CREATE PROCEDURE GET_HOUSE_HOST_INFO(userId INT) DETERMINISTIC
+	BEGIN 
+		SELECT Users.userId, Users.userName, Users.userSurname, Users.userEmail, 
+			Users.userPhoneNumber, Users.userBirthDay, Users.userRegistrationDay, 
+			Users.userWallet, Users.userDescription, Users.userAvatar
+				FROM `Users` WHERE Users.userId = userId;
+	END 
+	
+CREATE PROCEDURE GET_HOUSE_LOCATION(houseId INT) DETERMINISTIC
+	BEGIN
+		SELECT *FROM `HousesLocation` WHERE HousesLocation.houseId = houseId; 
+	END 
+	
+CREATE PROCEDURE GET_HOUSE_FULLPLACE(cityCode INT) DETERMINISTIC
+	BEGIN 
+		SELECT Cities.cityName, Countries.countryName FROM `Cities`, `Countries` WHERE cityCode = Cities.cityCode && Cities.countryCode = Countries.countryCode; 
+	END 
+	
+CREATE PROCEDURE ADD_HOUSEIMAGE(houseId INT, imgPath TEXT)
+	BEGIN
+		INSERT INTO HouseImgs(`houseId`, `imgPath`)
+			values (houseId, imgPath); 
+	END
+	
+	
+CREATE PROCEDURE START_CONTRACT(houseId INT, randId INT,  guestId INT,
+								guestsCount INT, dateFrom TEXT, dateTo TEXT,
+								price INT, priceWei DOUBLE, msg TEXT, hash TEXT)
+	BEGIN
+		INSERT INTO Contracts(`houseId`, `contractId`, `guestId`, `guestsCount`, `dateFrom`, `dateTo`, `price`, `priceWei`, `hash`)
+			VALUES (houseId, randId, guestId, guestsCount, dateFrom, dateTo, price, priceWei, hash);
+		
+		INSERT INTO Messages(`contractId`, `msg`, `fromId`, `msgDate`)
+			VALUES (randId, msg, guestId, CURRENT_DATE());
+	END
+	
+CREATE PROCEDURE GET_USER_INFO(userId INT) 
+	BEGIN 
+		SELECT Users.userId, Users.userName, Users.userSurname, 
+			Users.userEmail, Users.userPhoneNumber, Users.userBirthDay, 
+			Users.userRegistrationDay, Users.userWallet, Users.userDescription, Users.userAvatar
+		FROM `Users` 
+		WHERE userId = Users.userId; 
+	END 
+	
+CREATE PROCEDURE IS_USER_AUTH(userId INT, userToken TEXT)  
+	BEGIN 
+		SELECT COUNT(*) as auth FROM `Users` WHERE  Users.userId = userId and Users.userToken = userToken;		 
+	END 
+	
+CREATE PROCEDURE LOGIN(userEmail TEXT, userPassword TEXT)  
+	BEGIN 
+		SELECT *FROM Users WHERE Users.userEmail = userEmail and Users.userPassword = userPassword;
+	END 
+
+CREATE PROCEDURE UPDATE_TOKEN(userEmail TEXT, userPassword TEXT, token TEXT)
+	BEGIN 
+		UPDATE  `Users` SET Users.userToken = token
+			WHERE Users.userEmail = userEmail and Users.userPassword = userPassword;	
+	END
+	
+CREATE PROCEDURE GET_OFFERINGS(userId INT, userToken TEXT)  
+	BEGIN 
+		 
+			SELECT Contracts.contractId, Contracts.guestId, Contracts.dateFrom, 
+					Contracts.dateTo, Contracts.price, Contracts.priceWei, Contracts.contractStatus, 
+					Users.userId as partnerId, Users.userName  as partnerName, 
+					Users.userSurname as partnerSurname, Users.userBirthDay as partnerBirthDay, 
+					Users.userEmail as partnerEmail, Users.userPhoneNumber as partnerPhoneNumber,
+					Users.userRegistrationDay as partnerRegistartion, Users.userWallet as partnerWallet,  
+					Users.userDescription as partnerDescription, Users.userAvatar as partnerAvatar,
+					Houses.houseId, Houses.houseName, Houses.houseOrderType, 
+					Houses.houseGuestCount,  Houses.housePriceType, Houses.houseDescription, Houses.cityCode, Houses.houseMainImg,
+					Houses.dayPrice, Houses.houseAddress,  HousesLocation.houseLat, HousesLocation.houseLng
+				
+			FROM `Contracts`, `Houses`, `Users`, `HousesLocation`
+				
+			WHERE 
+				Contracts.houseId = Houses.houseId 
+				and Houses.houseId = HousesLocation.houseId
+				and userId = Houses.userId 
+				and Users.userId = Contracts.guestId
+				and Contracts.contractStatus < 3; 
+ 
+	END 
+
+	
+CREATE PROCEDURE GET_TRIPS(userId INT, userToken TEXT)  
+	BEGIN 		 
+		SELECT Contracts.contractId, Contracts.guestId, Contracts.dateFrom, 
+				Contracts.dateTo, Contracts.price, Contracts.priceWei, Contracts.contractStatus, 
+				Users.userId as partnerId, Users.userName  as partnerName, 
+				Users.userSurname as partnerSurname, Users.userBirthDay as partnerBirthDay, 
+				Users.userEmail as partnerEmail, Users.userPhoneNumber as partnerPhoneNumber,
+				Users.userRegistrationDay as partnerRegistartion, Users.userWallet as partnerWallet,  
+				Users.userDescription as partnerDescription, Users.userAvatar as partnerAvatar,
+				Houses.houseId, Houses.houseName, Houses.houseOrderType, 
+				Houses.houseGuestCount,  Houses.housePriceType, Houses.houseDescription, Houses.cityCode, Houses.houseMainImg,
+				Houses.dayPrice, Houses.houseAddress,  HousesLocation.houseLat, HousesLocation.houseLng
+			
+		FROM `Contracts`, `Houses`, `Users`, `HousesLocation`
+			
+		WHERE 
+			userId = Contracts.guestId
+			and Contracts.houseId = Houses.houseId 
+			and Houses.houseId = HousesLocation.houseId
+			and Houses.userId = Users.userId
+			and Contracts.contractStatus < 3; 
+	END 
+ 
+CREATE PROCEDURE GET_CHAT(contractId INT)
+	BEGIN 
+		SELECT Messages.msgId, Messages.msg,  Messages.fromId, Messages.msgDate 
+		FROM `Messages`
+		Where Messages.contractId = contractId;
+	END 
+	
+CREATE PROCEDURE SEND_MSG(msgid INT, contractId INT, userId INT, msg TEXT)
+	BEGIN 
+		INSERT INTO Messages(`msgId`, `contractId`, `msg`, `fromId`, `msgDate`)
+			VALUES (msgid, contractId, msg, userId, CURRENT_DATE());
+	END 
+ 
+ 
+CREATE PROCEDURE CANCEL_CONTRACT(contractId INT)
+	BEGIN 
+		DELETE FROM `Messages` WHERE Messages.contractId = contractId; 
+		DELETE FROM `Contracts` WHERE Contracts.contractId = contractId; 
+	END 
+	
+CREATE PROCEDURE UPDATE_CONTRACT_STATUS(contractId INT, newStatus INT, newHash TEXT)
+	BEGIN
+		UPDATE  `Contracts` SET Contracts.contractStatus = newStatus, Contracts.hash = newHash
+			WHERE Contracts.contractId = contractId;
+	END
+	
+CREATE PROCEDURE UPDATE_MAIN_IMG(houseId INT, path TEXT)
+	BEGIN
+		UPDATE  `Houses` SET Houses.houseMainImg = path	
+			WHERE Houses.houseId = houseId;
+		
+		CALL ADD_HOUSEIMAGE(houseId, path); 
+	END
+
+CREATE PROCEDURE PUBLISH_LODGING(houseId INT)
+	BEGIN 
+		UPDATE  `Houses` SET Houses.isAvailable = 1	
+			WHERE Houses.houseId = houseId;
+	END 
+	
+CREATE PROCEDURE GET_CONTRACTS_ID(houseId INT)
+	BEGIN 
+		SELECT *  FROM `Contracts` WHERE Contracts.contractStatus < 3 and Contracts.houseId = houseId;
+	END 
+	

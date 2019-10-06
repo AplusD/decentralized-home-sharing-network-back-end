@@ -1,0 +1,140 @@
+CREATE TABLE Users
+(	
+	userId INT NOT NULL, 
+	userName CHAR(25) NOT NULL, 
+	userSurname CHAR (25) NOT NULL, 
+	userEmail CHAR(50) NOT NULL, 
+	userPhoneNumber INT NOT NULL, 
+	userPassword CHAR(25) NOT NULL, 
+	userBirthDay DATE NOT NULL, 
+	userRegistrationDay DATE NOT NULL, 
+	userWallet TEXT NOT NULL, 
+	userDescription TEXT, 
+	userAvatar TEXT,
+	userToken TEXT NOT NULL,
+	
+	primary key (userId)
+)
+
+CREATE TABLE Houses 
+(
+	houseId INT NOT NULL, 
+	houseName VARCHAR(25) DEFAULT 'Sweet home',
+	houseOrderType INT DEFAULT 1, 
+	houseGuestCount INT DEFAULT 1, 
+	housePriceType INT DEFAULT 1, 
+	houseDescription TEXT NOT NULL DEFAULT '',
+	cityCode INT DEFAULT 7,
+	houseMainImg TEXT DEFAULT "",
+	dayPrice INT DEFAULT 100,
+	houseAddress TEXT NOT NULL, 
+	userId INT NOT NULL, 
+	isAvailable TINYINT DEFAULT 1, 
+	
+	primary key(houseId), 
+	foreign key (userId) REFERENCES Users(userId),
+	foreign key (cityCode) REFERENCES Cities(cityCode), 
+	foreign key	(houseOrderType) REFERENCES HouseOrderTypes(houseOrderType)
+)
+
+CREATE TABLE HousesLocation 
+(
+	houseId INT NOT NULL, 
+	houseLat DOUBLE, 
+	houseLng DOUBLE, 
+	foreign key (houseId) REFERENCES Houses(houseId)
+)
+
+
+
+CREATE TABLE HouseImgs
+(
+	imgId INT NOT NULL AUTO_INCREMENT, 
+	houseId INT NOT NULL, 
+	imgPath TEXT NOT NULL,
+    primary key(imgId), 
+	foreign key (houseId) REFERENCES Houses(houseId)
+)
+
+CREATE TABLE Cities 
+(
+	cityCode INT DEFAULT 449, 
+	countryCode INT DEFAULT 7, 
+	cityName CHAR(25) DEFAULT 'Moscow', 
+	primary key(cityCode), 
+	foreign key (countryCode) REFERENCES Countries(countryCode)
+)
+
+CREATE TABLE Countries 
+(
+	countryCode INT DEFAULT 7, 
+	countryName CHAR(25) DEFAULT 'Russian', 
+	primary key (countryCode)
+)
+
+CREATE TABLE HouseOrderTypes
+(
+	houseOrderType INT DEFAULT 1, 
+	houseOrderTypeDescription CHAR(25) DEFAULT 'Flat',
+	primary key(houseOrderType)
+)
+
+	
+CREATE TABLE UsersReview 
+(
+	userReviewId INT NOT NULL, 
+	userIdTo INT NOT NULL, 
+	userIdFrom INT NOT NULL, 
+	userReviewStars INT DEFAULT 5, 
+	userReviewDescription TEXT,
+	foreign key (userIdTo) REFERENCES Users(userId),
+	foreign key (userIdFrom) REFERENCES Users(userId),
+	primary key(userReviewId)
+)
+
+CREATE TABLE HouseReview
+(
+	houseReviewId INT NOT NULL, 
+	houseId INT NULL, 
+	userId INT NULL, 
+	houseReviewStars INT DEFAULT 5, 
+	houseReviewDescription TEXT,
+	
+	primary key (houseReviewId),
+	foreign key (houseId)REFERENCES Houses(houseId), 
+	foreign key (userId) REFERENCES Users(userId)
+)
+
+CREATE TABLE Contracts 
+(
+	houseId INT NOT NULL, 
+	contractId INT NOT NULL, 
+	guestId INT NOT NULL,
+	guestsCount INT NOT NULL, 
+	dateFrom DATE NOT NULL, 
+	dateTo DATE NOT NULL, 
+	price INT NOT NULL, 
+	priceWei DOUBLE NOT NULL,
+	contractStatus INT DEFAULT 1,
+	hash TEXT NOT NULL,
+
+	primary key (contractId),
+	foreign key (guestId) REFERENCES Users(userId),
+	foreign key (houseId)REFERENCES Houses(houseId)
+)
+
+CREATE TABLE Messages 
+(
+	msgId INT NOT NULL AUTO_INCREMENT, 
+	contractId INT NULL, 
+	msg TEXT NOT NULL, 
+	fromId INT NOT NULL, 
+	msgDate DATE NOT NULL, 
+
+	primary key(msgId),
+	foreign key (contractId) REFERENCES Contracts(contractId),
+	foreign key (fromId) REFERENCES Users(userId) 
+)
+ 
+ 
+ 

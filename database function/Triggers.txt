@@ -1,0 +1,6 @@
+CREATE TRIGGER DeleteHouse
+AFTER DELETE ON Houses FOR EACH ROW 
+ BEGIN 
+	DELETE FROM HouseImgs WHERE HouseImgs.houseId = Houses.houseId; 
+	DELETE FROM HousesLocation WHERE HousesLocation.houseId = Houses.houseId; 
+ END;
