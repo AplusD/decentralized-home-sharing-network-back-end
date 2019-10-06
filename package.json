@@ -1,0 +1,27 @@
+{
+  "name": "home.sharing.network",
+  "version": "0.0.1",
+  "description": "Application for lease/rent lodging based on Blockchain",
+  "main": "server.js",
+  "author": "Azamat Dzhonov",
+  "license": "No",
+  "dependencies": {
+    "ejs": "2.5.6",
+    "ethereumjs-tx": "^1.3.5",
+    "express": "^4.16.4",
+    "file-type": "^5.2.0",
+    "multer": "^1.4.1",
+    "mysql": "^2.15.0",
+    "pg": "7.4.1",
+    "solc": "^0.4.25",
+    "web3": "^0.20.1",
+    "web3_extended": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=7.6"
+  },
+  "scripts": {
+    "prestart": "npm update",
+    "start": "node ./index.js"
+  }
+}
